@@ -1,0 +1,5 @@
+tensorflow==2.13.0
+flask==2.0.1
+numpy>=1.22.0,<=1.24.3
+pillow==8.4.0
+flask-cors==5.0.0

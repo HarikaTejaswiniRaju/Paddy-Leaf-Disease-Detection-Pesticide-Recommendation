@@ -1,0 +1,208 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>Paddy Leaf Disease Prediction</title>
+  <style>
+    body {
+      font-family: Arial, sans-serif;
+      background-color: #0b1d3a; /* Navy Blue */
+      color: #ffffff;
+      text-align: center;
+      padding: 20px;
+    }
+
+    h1 {
+      color: #4CAF50;
+    }
+
+    .upload-area {
+      border: 2px dashed #4CAF50;
+      padding: 30px;
+      width: 60%;
+      margin: 0 auto;
+      background-color: #122c4d; /* Slightly lighter navy */
+      border-radius: 10px;
+      cursor: pointer;
+      color: #ffffff;
+    }
+
+    .upload-area.dragover {
+      background-color: #1f3d5c;
+    }
+
+    #preview {
+      margin: 20px auto;
+      max-width: 300px;
+      max-height: 300px;
+      border: 2px solid #4CAF50;
+      border-radius: 10px;
+      display: none;
+    }
+
+    button {
+      padding: 12px 30px;
+      background-color: #4CAF50;
+      color: white;
+      border: none;
+      border-radius: 8px;
+      font-size: 18px;
+      margin-top: 20px;
+      cursor: pointer;
+    }
+
+    button:hover {
+      background-color: #388e3c;
+    }
+
+    #result {
+      margin-top: 30px;
+      font-size: 18px;
+      color: #ffffff;
+    }
+
+    .result-toggle {
+      margin: 20px;
+    }
+
+    .how-it-works {
+      display: flex;
+      flex-wrap: wrap;
+      justify-content: center;
+      gap: 20px;
+      margin-top: 40px;
+    }
+
+    .step-box {
+      background-color: #122c4d;
+      border: 2px solid #4CAF50;
+      border-radius: 12px;
+      padding: 20px;
+      width: 200px;
+      box-shadow: 0 0 10px rgba(0,0,0,0.1);
+      text-align: center;
+      color: #ffffff;
+    }
+
+    .step-box img {
+      width: 60px;
+      height: 60px;
+      margin-bottom: 10px;
+    }
+
+    .hidden {
+      display: none;
+    }
+  </style>
+</head>
+<body>
+
+  <h1>Paddy Leaf Disease Prediction</h1>
+
+  <form id="upload-form" enctype="multipart/form-data">
+    <div class="upload-area" id="upload-area">
+      <p>Drag & Drop Image Here or Click to Select</p>
+      <input type="file" name="image" id="file-input" hidden required />
+    </div>
+    <button type="submit">Predict</button>
+  </form>
+
+  <img id="preview" src="" alt="Uploaded Image" />
+
+  <div class="result-toggle">
+    <button onclick="toggleRecommendation('organic')">Organic</button>
+    <button onclick="toggleRecommendation('chemical')">Chemical</button>
+  </div>
+
+  <div id="result"></div>
+
+  <div class="how-it-works">
+    <div class="step-box">
+      <img src="https://img.icons8.com/color/96/upload.png" alt="Upload Icon"/>
+      <p><strong>Step 1:</strong> Upload paddy leaf image</p>
+    </div>
+    <div class="step-box">
+      <img src="https://img.icons8.com/color/96/artificial-intelligence.png" alt="Prediction Icon"/>
+      <p><strong>Step 2:</strong> Our AI predicts the disease</p>
+    </div>
+    <div class="step-box">
+      <img src="https://img.icons8.com/color/96/leaf.png" alt="Organic Icon"/>
+      <p><strong>Step 3:</strong> Get organic solution</p>
+    </div>
+  </div>
+
+  <script>
+    const form = document.getElementById("upload-form");
+    const fileInput = document.getElementById("file-input");
+    const preview = document.getElementById("preview");
+    const resultDiv = document.getElementById("result");
+    const uploadArea = document.getElementById("upload-area");
+
+    uploadArea.addEventListener("click", () => fileInput.click());
+
+    uploadArea.addEventListener("dragover", (e) => {
+      e.preventDefault();
+      uploadArea.classList.add("dragover");
+    });
+
+    uploadArea.addEventListener("dragleave", () => {
+      uploadArea.classList.remove("dragover");
+    });
+
+    uploadArea.addEventListener("drop", (e) => {
+      e.preventDefault();
+      fileInput.files = e.dataTransfer.files;
+      uploadArea.classList.remove("dragover");
+    });
+
+    fileInput.addEventListener("change", () => {
+      if (fileInput.files.length > 0) {
+        const reader = new FileReader();
+        reader.onload = function (e) {
+          preview.src = e.target.result;
+          preview.style.display = "block";
+        };
+        reader.readAsDataURL(fileInput.files[0]);
+      }
+    });
+
+    form.addEventListener("submit", async (e) => {
+      e.preventDefault();
+      const formData = new FormData(form);
+
+      const response = await fetch("/predict", {
+        method: "POST",
+        body: formData,
+      });
+
+      const data = await response.json();
+
+      preview.src = data.image_url;
+      preview.style.display = "block";
+
+      window.predictionData = data;
+
+      displayRecommendation("organic");
+    });
+
+    function toggleRecommendation(type) {
+      displayRecommendation(type);
+    }
+
+    function displayRecommendation(type) {
+      const data = window.predictionData;
+      if (!data) return;
+
+      if (data.label === "not_paddy_leaf") {
+        resultDiv.innerHTML = `<div class="result-item"><strong>Note:</strong> ${data.message}</div>`;
+      } else {
+        resultDiv.innerHTML = `
+          <div class="result-item"><strong>Predicted Disease:</strong> ${data.label}</div>
+          <div class="result-item"><strong>${type === "organic" ? "Organic Recommendation" : "Chemical Recommendation"}:</strong> ${type === "organic" ? data.organic : data.chemical}</div>
+        `;
+      }
+    }
+  </script>
+</body>
+</html>
